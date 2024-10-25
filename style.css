@@ -265,50 +265,52 @@ input[type="radio"]:checked + .select-btn {
 .circle-container {
     position: relative;
     width: 100%;
-    max-width: 400px; /* Setzt eine maximale Breite */
-    height: 400px;
-    border: 2px solid transparent; /* Optional: Falls du einen Rahmen für den Kreis benötigst */
+    max-width: 450px; /* Setzt eine maximale Breite */
+    height: 450px;
 }
 
 .center-button {
-    padding: 1.8rem; /* Oben und unten 1.5rem Padding */
-    box-shadow: 0 0 20px rgba(174, 0, 255, 0.7), 0 0 20px rgba(174, 0, 255, 0.7); /* Neon-Effekt */
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #e42121;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 50%; /* Zentriert vertikal */
+    left: 50%; /* Zentriert horizontal */
+    z-index: 1; /* Sicherstellen, dass der Button über den Buchstaben steht */
+    transform: translate(-50%, -50%); /* damit Button zentral ist*/
 }
 
 .main-btn {
     font-size: 2.2rem; /* Größere Schriftgröße */
-    padding: auto;
-    background-color: transparent;
+    padding: 1.8rem;
+    box-shadow: 0 0 20px rgba(174, 0, 255, 0.7), 0 0 20px rgba(174, 0, 255, 0.7); /* Neon-Effekt */
+    background-color: #e42121;
+    border-radius: 50%;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     border: none;
     text-shadow: 0 0 5px rgba(174, 0, 255, 0.8), 0 0 10px rgba(174, 0, 255, 0.7), 
                  0 0 15px rgba(174, 0, 255, 0.7), 0 0 20px rgba(174, 0, 255, 0.7); /* Neon-Text-Effekt */
     color: #fff;
     cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* Übergänge für alle Eigenschaften */
 }
 
 .main-btn:hover {
     /* dunkler */
-    color: #ddd;
+    color: #4235f8;
+    transform: scale(1.1); /* Leichte Vergrößerung beim Hover */
 }
 
 .main-btn:active {
     /* reingedrückt */
-    color: #bbb;
+    border: none;
 }
 
 .alphabet-circle {
+    position: absolute;
     width: 100%;
+    height: 100%;
 }
 
 .letter-buttons {
@@ -341,27 +343,25 @@ input[type="radio"]:checked + .select-btn {
 
 .letter:hover {
     background-color: #8A2BE2; /* Lila Farbton beim Hover */
-    transform: scale(1.8); /* Button wächst beim Hover */
+    transform: scale(0.2); /* Button wächst beim Hover */
 }
 
-.test-btn {
-    background-color: white;
-    color: #333;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: 2px solid #333;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-    outline: none;
+.letter.clicked {
+    background-color: #888;
+    color: #ddd;
+    cursor: not-allowed;
 }
 
-.test-btn:hover {
-    background-color: #001f4d; /* Dunkelblau */
-    color: white;
+.wordInputFeld {
+    display: none;
+    background-color: #631414;
 }
 
-.test-btn:active, .test-btn.clicked {
-    background-color: #888; /* Grauer Hintergrund */
-    color: #ddd; /* Grauer Text */
+.hinweis {
+    color: #faf600;
+    display: none;
+}
+
+.active {
+    display: block;
 }
