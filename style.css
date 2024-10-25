@@ -344,3 +344,24 @@ input[type="radio"]:checked + .select-btn {
     transform: scale(1.8); /* Button wächst beim Hover */
 }
 
+.test-btn {
+    background-color: white;
+    color: #333;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    outline: none;
+}
+
+.test-btn:hover {
+    background-color: #001f4d; /* Dunkelblau */
+    color: white;
+}
+
+.test-btn:active, .test-btn.clicked {
+    background-color: #888; /* Grauer Hintergrund */
+    color: #ddd; /* Grauer Text */
+}

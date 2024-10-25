@@ -34,6 +34,32 @@
             </div>
         </div>
         <input id="wordInput" class="input-word noto-sans-bold" type="text" placeholder="Wort eingeben">
+        
+        <!-- Button zum Öffnen/Schließen des Textfeldes -->
+        <button id="toggleButton" class="btn">Klick mich!</button>
+
+        <!-- Container für das Textfeld und den Hinweis -->
+        <div id="textContainer" class="text-container">
+            <input type="text" placeholder="Gib hier deinen Text ein">
+            <p class="noto-sans-regular">Zum Fortfahren den Button klicken</p>
+        </div>
+
+        <script>
+            // Funktion, um das Textfeld zu zeigen oder zu verstecken
+            const toggleButton = document.getElementById('toggleButton');
+            const textContainer = document.getElementById('textContainer');
+
+            toggleButton.addEventListener('click', () => {
+            if (textContainer.style.display === 'none' || textContainer.style.display === '') {
+                textContainer.style.display = 'block';
+                toggleButton.classList.remove("clicked");
+            } else {
+                textContainer.style.display = 'none';
+                toggleButton.classList.add("clicked");
+            }
+            });
+        </script>
+
     </div>
 
     <audio id="clickSound" src="click.mp3"></audio>
