@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuickWords</title>
+    <meta name="description" content="QuickWords - Where quick thinking meets word mastery" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Startseite -->
+    <div class="mainpage-container noto-sans-regular">
+      <img src="/img/QuickWords-logo2.png" alt="QuickWords Logo" class="logo" />
+      <div class="start-game-container">
+        <input class="input-RoomID noto-sans-bold" type="text" placeholder="Room ID" id="input-RoomID"/>
+        <div class="grid-buttons-mainpage">
+          <button id="join-game-btn" class="btn noto-sans-bold" disabled>Spiel beitreten</button>
+          <a href="game.html" class="btn noto-sans-bold" id="new-game-btn">Neues Spiel</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="mainpage.js"></script>
+  </body>
+</html>

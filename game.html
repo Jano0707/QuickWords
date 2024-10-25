@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickWords Spiel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container noto-sans-regular">
+        <div class="roomID-container noto-sans-regular">
+            <input type="text" id="roomID-Display" class="room-id-display noto-sans-regular" readonly value="Room ID: [Zufällige ID]">
+            <button id="copyButton" class="copy-icon"></button>
+        </div>
+        <div class="category-display">
+            <label id="categoryLabel" class="category-game noto-sans-bold">
+                Aktuelle Kategorie
+            </label>
+        </div>
+        <div class="circle-container">
+            <div class="outer-ring"></div>
+            <div class="middle-ring"></div>
+            <div class="inner-ring"></div>
+            <div class="center-button noto-sans-bold">
+                <button class="main-btn noto-sans-bold" id="mainButton">START</button>
+            </div>
+            <div class="alphabet-circle">
+                <div class="letter-buttons noto-sans-bold">
+                    <!-- Letter buttons will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+        <input id="wordInput" class="input-word noto-sans-bold" type="text" placeholder="Wort eingeben">
+    </div>
+
+    <audio id="clickSound" src="click.mp3"></audio>
+    <audio id="countdownSound" src="countdown.mp3" loop></audio>
+
+    <script src="game.js"></script>
+</body>
+</html>
