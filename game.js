@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyButton = document.getElementById('copyButton');
     const clickSound = document.getElementById('clickSound');
     const countdownSound = document.getElementById('countdownSound');
-    const wordInputContainer = document.getElementById('wordInputContainer');
+    const hinweis = document.getElementById('hinweis');
   
     let timer = 20;
     let isGameActive = false;
@@ -28,12 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
     // Function to open the text field
     function openTextField() {
-      wordInputContainer.classList.add("active"); // Zeige das Textfeld an
+      wordInput.style.display = 'block'; // Zeige das Textfeld an
+      hinweis.style.display = 'block'; // Zeige den Hinweis an
     }
   
     // Function to close the text field
     function closeTextField() {
-      wordInputContainer.style.display = 'none'; //Blende das Textfeld aus
+      wordInput.style.display = 'none'; // Blende das Textfeld aus
+      hinweis.style.display = 'none'; // Blende den Hinweis aus
     }
   
     // Create letter buttons dynamically and make them clickable
