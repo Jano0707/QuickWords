@@ -326,9 +326,9 @@ input[type="radio"]:checked + .select-btn {
     position: absolute;
     background-color: white;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
     color: black;
     text-align: center;
     line-height: 40px;
@@ -392,35 +392,6 @@ input[type="radio"]:checked + .select-btn {
     left: 16px; /* Linker Abstand */
     top: 16px; /* Oberer Abstand */
 }
-.next-category-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    right: 100px; /* Direkt am rechten Rand */
-    top: 53%; /* Mittig vertikal */
-    transform: translateY(-50%); /* Exakte Zentrierung */
-}
-
-.next-category-btn {
-    font-size: 1.5rem;
-    padding: 1rem;
-    background-color: #4CAF50; /* Grüne Farbe als Beispiel */
-    color: white;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.15s ease-in-out;
-}
-
-.next-category-btn:hover {
-    background-color: #45a049; /* dunkleres Grün beim Hover */
-    transform: scale(1.05);
-}
-
-.next-category-btn:active {
-    transform: scale(0.95);
-}
 
 * {
     box-sizing: border-box;
@@ -430,11 +401,15 @@ input[type="radio"]:checked + .select-btn {
 .wrapper {
 display: flex;
 justify-content: center;
+position: absolute;
+right: 100px; /* Direkt am rechten Rand */
+top: 53%; /* Mittig vertikal */
+transform: translateY(-50%); /* Exakte Zentrierung */
 }
 
 .cta {
     display: flex;
-    padding: 10px 45px;
+    padding: 5px 20px;
     text-decoration: none;
     font-family: 'Poppins', sans-serif;
     font-size: 40px;

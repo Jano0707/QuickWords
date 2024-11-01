@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     // Create letter buttons dynamically and make them clickable
-    for (let i = 65; i <= 90; i++) {
-      const letter = String.fromCharCode(i);
+    const allowedLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'W'];
+    allowedLetters.forEach(letter => {
       const button = document.createElement('button');
       button.textContent = letter;
       button.classList.add('letter', 'noto-sans-bold');
@@ -55,13 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       alphabetCircle.appendChild(button);
-    }
+    });
 
     // Position letter buttons in a circle
     const letters = document.querySelectorAll('.letter');
     const radius = 190; // Adjust as needed
     letters.forEach((letter, index) => {
-      const angle = (index / letters.length) * (2 * Math.PI);
+      const angle = (index / letters.length) * (2 * Math.PI) - Math.PI / 2; // Start from the top (A)
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
       letter.style.transform = `translate(${x}px, ${y}px)`;
@@ -118,5 +118,5 @@ document.addEventListener('DOMContentLoaded', () => {
   
     // Set a sample category
     categoryLabel.textContent = 'Kategorie: Tiere';
-  });
+});
   
