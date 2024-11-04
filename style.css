@@ -66,6 +66,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .input-RoomID {
+    width: calc(100% - 1rem);
     padding: 1.5rem; /* Padding für Input-Feld */
     font-size: 1.6rem; /* Schriftgröße */
     line-height: 2rem; /* Zeilenhöhe */
@@ -122,7 +123,92 @@ input::placeholder,textarea::placeholder {
     cursor: not-allowed; /* Zeigt an, dass der Button nicht klickbar ist */
 }
 
+.input-username {
+    padding: 1.5rem; /* Padding für Input-Feld */
+    font-size: 1.6rem; /* Schriftgröße */
+    line-height: 2rem; /* Zeilenhöhe */
+    border-radius: 1.2rem; /* Abgerundete Ecken */
+    border-width: 2px; /* Rahmenbreite */
+    border-color: rgb(101, 101, 173); /* Rahmenfarbe ohne Opazität */
+    background-color: rgb(26, 26, 74); /* Hintergrundfarbe */
+    color: rgb(255, 255, 255); /* Textfarbe */
+    text-align: center; /* Text zentriert */
+    box-shadow: inset 0 4px 4px 0 rgba(163, 145, 228, 0.438); /* Schatten */
+    transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* Übergang für die Rahmenfarbe */
+}
 
+input::placeholder,textarea::placeholder {
+    /* Infos zum Platzhalter 'Room ID' */
+    opacity:1;
+    color:#9ca3af
+}
+
+/* Stil für den Fokuszustand */
+.input-username:focus {
+    border-color: rgb(58, 58, 106); /* Rahmenfarbe beim Fokussieren */
+    outline: 2px solid transparent; /* Kein sichtbares Outline */
+    outline-offset: 2px; /* Abstand des Outlines */
+    box-shadow: inset 0 2px 4px 0 rgba(92, 84, 161, 0.973), 0 0 0 2px rgba(58, 58, 106, 0.5); /* Zusätzlicher Schatteneffekt */
+}
+
+.modal-input-RoomID-container {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    background: rgba(0, 0, 0, 0.5); /* Dark overlay with transparency */
+    backdrop-filter: blur(0.2px); /* Adds the blur effect */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    max-width: 42rem; /* Match width of start-game-container */
+    width: 60%;
+    padding: 2rem;
+    background-color: rgb(58, 58, 106); /* Main background color */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    border-radius: 1.2rem; /* Optional: rounded corners */
+}
+
+.join-btn {
+    width: calc(100% - 1rem);
+}
+  
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 0rem;
+    font-size: 35px;
+    font-weight: bold;
+    color: #ffffff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+  
+.close:hover {
+    color: #333;
+}
+
+/* Add Zoom Animation */
+.animate {
+    -webkit-animation: animatezoom 0.6s;
+    animation: animatezoom 0.6s
+}
+  
+@-webkit-keyframes animatezoom {
+    from {-webkit-transform: scale(0)} 
+    to {-webkit-transform: scale(1)}
+}
+    
+@keyframes animatezoom {
+    from {transform: scale(0)} 
+    to {transform: scale(1)}
+}
 
 /* Styles für category-html */
 

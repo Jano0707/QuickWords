@@ -18,10 +18,19 @@
     <div class="mainpage-container noto-sans-regular">
       <img src="/img/QuickWords-logo2.png" alt="QuickWords Logo" class="logo" />
       <div class="start-game-container">
-        <input class="input-RoomID noto-sans-bold" type="text" placeholder="Room ID" id="input-RoomID"/>
+        <input class="input-username noto-sans-bold" type="text" placeholder="Username" id="input-username" autocomplete="off"/>
         <div class="grid-buttons-mainpage">
           <button id="join-game-btn" class="btn noto-sans-bold" disabled>Spiel beitreten</button>
-          <a href="game.html" class="btn noto-sans-bold" id="new-game-btn">Neues Spiel</a>
+          <button class="btn noto-sans-bold" id="new-game-btn" disabled onclick="window.location.href='game.html'">Neues Spiel</button>
+        </div>
+      </div>
+
+      <!-- Container für das Textfeld für Room ID zum joinen -->
+      <div id="input-RoomID-container" class="modal-input-RoomID-container noto-sans-regular" style="display: none;">
+        <div class="modal-content animate">
+          <span class="close" onclick="document.getElementById('input-RoomID-container').style.display='none'">&times;</span>
+          <input type="text" id="input-RoomID" class="input-RoomID noto-sans-bold" placeholder="Room ID" autocomplete="off"/>
+          <button id="join-game-final-btn" class="btn join-btn noto-sans-bold">Spiel beitreten</button>
         </div>
       </div>
     </div>
