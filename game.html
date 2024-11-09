@@ -12,8 +12,8 @@
 <body>
     <div class="game-container noto-sans-regular">
         <div class="roomID-container noto-sans-regular">
-            <input type="text" id="roomID-Display" class="room-id-display noto-sans-regular" readonly value="Room ID: [Zufällige ID]">
-            <button id="copyButton" class="copy-icon"></button>
+            <input type="text" id="roomID-Display" class="room-id-display noto-sans-regular" readonly>
+            <button id="copyButton" data-room-id="${roomID}" class="copy-icon"></button>
         </div>
         <div class="category-display">
             <label id="categoryLabel" class="category-game noto-sans-bold">

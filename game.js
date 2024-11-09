@@ -1,4 +1,7 @@
 // game.js
+
+const socket = io();
+
 document.addEventListener('DOMContentLoaded', () => {
     const mainButton = document.getElementById('mainButton');
     const alphabetCircle = document.querySelector('.letter-buttons');
@@ -9,8 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickSound = document.getElementById('clickSound');
     const countdownSound = document.getElementById('countdownSound');
     const hinweis = document.getElementById('hinweis');
+
+    // Room ID und Username aus localStorage laden
+    const roomId = localStorage.getItem("roomId");
+    const username = localStorage.getItem("username");
   
-    let timer = 20;
+    let timer = 25;
     let isGameActive = false;
     let selectedLetter = null;
     let interval;
@@ -20,15 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let categories = [];
     let usedCategories = JSON.parse(localStorage.getItem('usedCategories')) || [];
   
-    // Generate a random room ID
-    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    roomIdDisplay.value = `Room ID`; // Optional: To show room ID as `Room ID: ${roomId}`;
-  
-    // Copy room ID functionality
+    // Room ID Text anzeigen:
+    roomIdDisplay.value = 'Room ID';
+
+    // Copy room ID functionality -> Room ID ist darin gespeichert
     copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(roomId).then(() => {
-        // Optional: alert('Room ID copied to clipboard!');
-      });
+      if (roomId) {
+        navigator.clipboard.writeText(roomId)
+        //.then(() => alert("Room ID kopiert!"))
+        .catch(err => console.error("Fehler beim Kopieren der Room ID:", err));
+      } else {
+        alert("Room ID nicht gefunden.");
+      }
     });
   
     // Function to open the text field
@@ -153,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedLetter = null;
       }
       clearInterval(interval);
-      timer = 20;
+      timer = 25;
       mainButton.textContent = timer;
       startCountdown();
     }
