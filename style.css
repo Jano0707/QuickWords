@@ -281,7 +281,7 @@ input[type="radio"]:checked + .select-btn {
     flex-direction: column;
     justify-content: center; /* Zentriert den Inhalt vertikal */
     align-items: center; /* Zentriert den Inhalt horizontal */
-    gap: 3rem;
+    gap: 4rem;
     max-width: 42rem; /* Maximalbreite für Container */
     width: 100%;
     padding: 1.5rem;
@@ -348,7 +348,13 @@ input[type="radio"]:checked + .select-btn {
     width: 100%;
 }
 
+.users-turn {
+    font-size: 1.7rem;
+    color: #9ca3af;
+}
+
 .circle-container {
+    margin-top: -2.9rem;
     position: relative;
     width: 100%;
     max-width: 450px; /* Setzt eine maximale Breite */
@@ -385,7 +391,7 @@ input[type="radio"]:checked + .select-btn {
 .main-btn:hover {
     /* dunkler */
     color: #4235f8;
-    transform: scale(1.1); /* Leichte Vergrößerung beim Hover */
+    transform: scale(1.25); /* Leichte Vergrößerung beim Hover */
 }
 
 .main-btn:active {
@@ -406,6 +412,7 @@ input[type="radio"]:checked + .select-btn {
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1;
 }
 
 .letter {
@@ -429,7 +436,7 @@ input[type="radio"]:checked + .select-btn {
 
 .letter:hover {
     background-color: #8A2BE2; /* Lila Farbton beim Hover */
-    transform: scale(0.2); /* Button wächst beim Hover */
+    transform: scale(2.2); /* Button wächst beim Hover */
 }
 
 .letter.clicked {

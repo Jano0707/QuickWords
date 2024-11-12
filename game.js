@@ -60,22 +60,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const button = document.createElement('button');
       button.textContent = letter;
       button.classList.add('letter', 'noto-sans-bold');
-
+      button.setAttribute('data-letter', letter);
+      
       button.style.pointerEvents = 'none'; // Disable interaction initially
 
       button.addEventListener('click', () => {
         if (isGameActive) {
-          clickSound.play();
-          selectedLetter = button;
-          button.classList.add('clicked'); // Button turns gray
-          button.disabled = true; // Disable button
-          openTextField();
-          wordInput.placeholder = `Wort mit ${letter}...`; // Update placeholder with letter
-          lettersClicked++; // Increment the clicked letters count
-          checkAllLettersClicked(); // Check if all letters are clicked
+          socket.emit("letterClicked", { roomId, letter });
+          handleLetterClick(button);
         }
       });
       alphabetCircle.appendChild(button);
+    });
+
+    // Zusätzliche Funktion für Buchstaben-Klick
+    function handleLetterClick(button) {
+      clickSound.play();
+      selectedLetter = button;
+      button.classList.add('clicked');
+      button.disabled = true;
+      openTextField();
+      wordInput.placeholder = `Wort mit ${button.textContent}...`;
+      lettersClicked++;
+      checkAllLettersClicked();
+    }
+
+    // Empfange Buchstaben-Update
+    socket.on("letterUpdate", (letter) => {
+      const button = document.querySelector(`button[data-letter='${letter}']`);
+      if (button && isGameActive) {
+          handleLetterClick(button);
+      }
     });
 
     // Check if all letters have been clicked -> game is over
@@ -126,6 +141,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Synchronisiere Texteingabe
+    wordInput.addEventListener('input', () => {
+      const text = wordInput.value;
+      socket.emit("textInput", { roomId, text });
+    });
+
+    // Empfange Texteingaben anderer Spieler
+    socket.on("textUpdate", (text) => {
+      wordInput.value = text; // Zeigt anderen Spielern die Eingabe live
+    });
+
     // Position letter buttons in a circle
     const letters = document.querySelectorAll('.letter');
     const radius = 190; // Adjust as needed
@@ -140,9 +166,19 @@ document.addEventListener('DOMContentLoaded', () => {
     mainButton.addEventListener('click', () => {
       if (!isGameActive) {
         startGame();
+        socket.emit("mainButtonPressed", roomId);
       } else {
         resetRound();
         closeTextField();
+      }
+    });
+    // Empfange Hauptbutton-Update vom Server
+    socket.on("mainButtonUpdate", () => {
+      if (!isGameActive) {
+          startGame();
+      } else {
+          resetRound();
+          closeTextField();
       }
     });
   

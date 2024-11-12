@@ -21,6 +21,10 @@
             </label>
         </div>
 
+        <div> <!-- Hier muss Text mit XXXXs Turn hin-->
+            <span id="users-turn" class="users-turn noto-sans-bold">JANO ist dran!</span>
+        </div>
+
         <!-- Nächste Kategorie -->
         <div class="wrapper">
             <a class="cta" href="#">
@@ -59,7 +63,7 @@
     <audio id="clickSound" src="click.mp3"></audio>
     <audio id="countdownSound" src="countdown.mp3" loop></audio>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

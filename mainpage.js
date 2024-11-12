@@ -3,6 +3,8 @@ const newGameButton = document.getElementById('new-game-btn');
 const inputRoomID = document.querySelector('.input-RoomID');
 const joinGameButton = document.getElementById('join-game-btn');
 const inputRoomIDContainer = document.getElementById('input-RoomID-container');
+
+// Connection zum Server
 const socket = io();
 
 socket.on("connect", () => {
@@ -42,7 +44,6 @@ newGameButton.addEventListener("click", () => {
 
 // Erhalte von Backend Room
 socket.on("roomCreated", (roomId) => {
-    alert(`Raum erstellt! Room ID: ${roomId}`);
     // Wechsel zu game.html und speichere Room ID und Username
     localStorage.setItem("roomId", roomId);
     localStorage.setItem("username", usernameInput.value.trim());

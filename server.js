@@ -1,11 +1,12 @@
 const express = require("express");
 const path = require("path");
-const http = require("http");
-const { Server } = require("socket.io");
-
 const app = express();
+
+// socket.io Setup
+const http = require("http");
 const server = http.createServer(app);
-const io = new Server(server);
+const { Server } = require("socket.io");
+const io = new Server(server, { pingInterval: 2000, pingTimeout: 5000 });
 
 // Statische Dateien bereitstellen
 app.use(express.static(path.resolve(__dirname)));
@@ -14,6 +15,11 @@ app.use(express.static(path.resolve(__dirname)));
 app.get("/", (req, res)=>{
     res.sendFile(path.join(__dirname, "index.html"));
 })
+
+// Server starten
+server.listen(3000, () => {
+    console.log("Server läuft auf http://localhost:3000");
+});
 
 // Room-Management und Userverwaltung
 
@@ -32,11 +38,14 @@ function generateUniqueRoomId() {
 // Socket.IO-Logik für den Umgang mit Spielern und Räumen
 io.on("connection", (socket) => {
     console.log("Ein Benutzer ist verbunden:", socket.id);
-  
+
     // Neues Spiel erstellen
     socket.on("createRoom", (username) => {
         const roomId = generateUniqueRoomId();
-        rooms.set(roomId, { users: [{ id: socket.id, username }] });
+        rooms.set(roomId, {
+            users: [{ id: socket.id, username }],
+            turnIndex: 0 // Der erste Spieler wird initial festgelegt
+        });
         socket.join(roomId);
         socket.emit("roomCreated", roomId); // Room ID an den Ersteller senden
         console.log(`Raum ${roomId} wurde erstellt von ${username}`);
@@ -55,26 +64,72 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Benutzer-Disconnect behandeln
-    /*
-    socket.on("disconnect", () => {
-        for (const [roomId, room] of rooms) {
-        const userIndex = room.users.findIndex((user) => user.id === socket.id);
-        if (userIndex !== -1) {
-            const [user] = room.users.splice(userIndex, 1);
-            console.log(`${user.username} hat Raum ${roomId} verlassen`);
-            if (room.users.length === 0) {
-                rooms.delete(roomId); // Raum löschen, wenn er leer ist
-                console.log(`Raum ${roomId} wurde gelöscht`);
-            }
-            break;
-        }
+    /** 
+     * NUN GEHTS AN DIE GAME LOGIK
+    */
+
+    // Funktion für die Zugübergabe
+    socket.on("endTurn", (roomId) => {
+        const room = rooms.get(roomId);
+        if (room) {
+            // Update turnIndex für den nächsten Spieler
+            room.turnIndex = (room.turnIndex + 1) % room.users.length;
+            const currentPlayer = room.users[room.turnIndex];
+            
+            // Benachrichtigen, dass der nächste Spieler an der Reihe ist
+            io.to(currentPlayer.id).emit("yourTurn", { username: currentPlayer.username });
+            // weiß ich nicht, ob nötig io.to(roomId).emit("turnChanged", { currentPlayer: currentPlayer.username });
         }
     });
-    */
-});
 
-// Server starten
-server.listen(3000, () => {
-    console.log("Server läuft auf http://localhost:3000");
+    // Main Button Event
+    socket.on("mainButtonPressed", (roomId) => {
+        io.to(roomId).emit("mainButtonUpdate");
+    });
+
+    // Buchstaben-Klick Event
+    socket.on("letterClicked", ({ roomId, letter }) => {
+        io.to(roomId).emit("letterUpdate", letter);
+    });
+
+    // Texteingabe Event
+    socket.on("textInput", ({ roomId, text }) => {
+        io.to(roomId).emit("textUpdate", text);
+    });
+
+    // Benutzer-Disconnect behandeln
+    // Spieler verlassen den Raum
+    socket.on("disconnect", (reason) => {
+        rooms.forEach((room, roomId) => {
+            const userIndex = room.users.findIndex(user => user.id === socket.id);
+            if (userIndex !== -1) {
+                const [removedUser] = room.users.splice(userIndex, 1);
+                console.log(`${removedUser.username} hat Raum ${roomId} verlassen`);
+                
+                // Aktualisiere den turnIndex, falls nötig
+                if (room.turnIndex >= room.users.length) {
+                    room.turnIndex = 0;
+                }
+
+                if (room.users.length === 0) {
+                    rooms.delete(roomId); // Raum entfernen, wenn keine Benutzer mehr übrig sind
+                    console.log('Der Raum ${roomId} ist leer und wurde gelöscht')
+                } else {
+                    io.to(roomId).emit("userLeft", removedUser.username);
+                }
+            }
+        });
+    });
+    /*
+    // Benutzer-Disconnect-Logik
+    socket.on("disconnect", () => {
+        console.log(`Benutzer ${socket.id} hat die Verbindung getrennt.`);
+        for (const [roomId, room] of rooms.entries()) {
+            if (room.users.some(user => user.id === socket.id)) {
+                socket.emit("leaveRoom", roomId);
+            }
+        }
+        delete users[socket.id];
+    });
+    */
 });
