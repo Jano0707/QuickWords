@@ -1,23 +1,23 @@
-const usernameInput = document.querySelector('.input-username');
-const newGameButton = document.getElementById('new-game-btn');
-const inputRoomID = document.querySelector('.input-RoomID');
-const joinGameButton = document.getElementById('join-game-btn');
-const inputRoomIDContainer = document.getElementById('input-RoomID-container');
-
 // Connection zum Server
-const socket = io();
+const socket = io('http://localhost:4000');
 
 socket.on("connect", () => {
     console.log("Connected to server");
 });
+
 socket.on("connect_error", (err) => {
     console.error("Connection error:", err);
 });
 
+const usernameInput = document.querySelector('.input-username');
+const newGameButton = document.getElementById('new-game-btn');
+const joinGameButton = document.getElementById('join-game-btn');
+const inputRoomIDContainer = document.getElementById('input-RoomID-container');
+const inputRoomID = document.getElementById('input-RoomID');
+
 // Aktiviert die "Spiel beitreten" und "Neues Spiel" buttons wenn ein Username eingegeben wurde
 usernameInput.addEventListener('input', function() {
     const isUsernameEntered = usernameInput.value.trim() !== "";
-    
     joinGameButton.disabled = !isUsernameEntered;
     newGameButton.disabled = !isUsernameEntered;
 });
@@ -34,36 +34,38 @@ window.onclick = function(event) {
     }
 };
 
-// username im Backend speichern (für Spiel) und create Room
+// Funktion zur Generierung einer zufälligen Room ID
+function generateRoomId() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Neues Spiel erstellen
 newGameButton.addEventListener("click", () => {
     const username = usernameInput.value.trim();
     if (username) {
-        socket.emit("createRoom", username);
+        const roomId = generateRoomId();
+        console.log('Creating new room:', roomId);
+        socket.emit("createRoom", roomId);
+        socket.on('roomCreated', () => {
+            window.location.href = `game.html?roomId=${roomId}&name=${encodeURIComponent(username)}`;
+        });
     }
-})
-
-// Erhalte von Backend Room
-socket.on("roomCreated", (roomId) => {
-    // Wechsel zu game.html und speichere Room ID und Username
-    localStorage.setItem("roomId", roomId);
-    localStorage.setItem("username", usernameInput.value.trim());
-    window.location.href = "game.html";
 });
 
-// Room joinen
-document.getElementById("join-game-final-btn").addEventListener("click", () => {
+// Spiel beitreten
+document.querySelector('.join-btn').addEventListener('click', () => {
     const username = usernameInput.value.trim();
-    const roomId = inputRoomID.value.trim();
+    const roomId = inputRoomID.value.trim().toUpperCase();
     if (username && roomId) {
-        socket.emit("joinRoom", { username, roomId });
+        console.log('Checking room:', roomId);
+        socket.emit('checkRoom', roomId);
+        
+        socket.on('roomExists', (exists) => {
+            if (exists) {
+                window.location.href = `game.html?roomId=${roomId}&name=${encodeURIComponent(username)}`;
+            } else {
+                alert('Dieser Raum existiert nicht!');
+            }
+        });
     }
-});
-
-// Room joinen erfolgreich? -> wenn ja, Room wurde gejoint
-socket.on("userJoined", ({ username, roomId }) => {
-    console.log(`${username} ist dem Raum ${roomId} beigetreten.`);
-    // Wechsel zu game.html und speichere die Room ID
-    localStorage.setItem("roomId", roomId);
-    localStorage.setItem("username", username);
-    window.location.href = "game.html";
 });

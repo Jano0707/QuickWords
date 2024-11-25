@@ -1,8 +1,26 @@
-// game.js
-
-const socket = io();
+// Socket.io Verbindung
+const socket = io('http://localhost:4000');
 
 document.addEventListener('DOMContentLoaded', () => {
+    socket.on('connect', () => {
+        console.log('Verbunden mit dem Server');
+        // URL Parameter auslesen und Raum beitreten
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('roomId');
+        const playerName = urlParams.get('name');
+        
+        if (roomId && playerName) {
+            console.log('Joining room:', roomId, 'as player:', playerName);
+            socket.emit('joinRoom', { roomId, playerName });
+            closeTextField();
+        }
+    });
+
+    socket.on('connect_error', (err) => {
+        console.error('Verbindungsfehler:', err);
+    });
+
+    // DOM Elemente
     const mainButton = document.getElementById('mainButton');
     const alphabetCircle = document.querySelector('.letter-buttons');
     const wordInput = document.getElementById('wordInput');
@@ -12,255 +30,231 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickSound = document.getElementById('clickSound');
     const countdownSound = document.getElementById('countdownSound');
     const hinweis = document.getElementById('hinweis');
+    const nextCategoryBtn = document.querySelector('.cta');
 
-    // Room ID und Username aus localStorage laden
-    const roomId = localStorage.getItem("roomId");
-    const username = localStorage.getItem("username");
-  
+    // Spielvariablen
     let timer = 25;
     let isGameActive = false;
     let selectedLetter = null;
     let interval;
-    let lettersClicked = 0; // Track the number of clicked letters
-    let blinkAfterEnd = false; // Track if blinking should happen after the timer ends
-    // Category management
-    let categories = [];
-    let usedCategories = JSON.parse(localStorage.getItem('usedCategories')) || [];
-  
-    // Room ID Text anzeigen:
+    let lettersClicked = 0;
+    let blinkAfterEnd = false;
+
+    // URL Parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('roomId');
+
+    // Room ID Text setzen
     roomIdDisplay.value = 'Room ID';
 
-    // Copy room ID functionality -> Room ID ist darin gespeichert
+    // Copy Button Funktionalität
     copyButton.addEventListener('click', () => {
-      if (roomId) {
-        navigator.clipboard.writeText(roomId)
-        //.then(() => alert("Room ID kopiert!"))
-        .catch(err => console.error("Fehler beim Kopieren der Room ID:", err));
-      } else {
-        alert("Room ID nicht gefunden.");
-      }
+        if (roomId) {
+            navigator.clipboard.writeText(roomId)
+                .then(() => {
+                    console.log('Room ID kopiert:', roomId);
+                })
+                .catch(err => {
+                    console.error('Fehler beim Kopieren:', err);
+                });
+        }
     });
-  
-    // Function to open the text field
+
+    // Textfeld Funktionen
     function openTextField() {
-      wordInput.style.display = 'block'; // Zeige das Textfeld an
-      hinweis.style.display = 'block'; // Zeige den Hinweis an
-      wordInput.focus(); //Automatisch im Textfeld
+        wordInput.style.display = 'block';
+        hinweis.style.display = 'block';
+        wordInput.focus();
     }
-  
-    // Function to close the text field
+
     function closeTextField() {
-      wordInput.style.display = 'none'; // Blende das Textfeld aus
-      hinweis.style.display = 'none'; // Blende den Hinweis aus
+        wordInput.style.display = 'none';
+        hinweis.style.display = 'none';
     }
-  
-    // Create letter buttons dynamically and make them clickable
+
+    // Buchstaben-Buttons erstellen
     const allowedLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'W'];
     allowedLetters.forEach(letter => {
-      const button = document.createElement('button');
-      button.textContent = letter;
-      button.classList.add('letter', 'noto-sans-bold');
-      button.setAttribute('data-letter', letter);
-      
-      button.style.pointerEvents = 'none'; // Disable interaction initially
-
-      button.addEventListener('click', () => {
-        if (isGameActive) {
-          socket.emit("letterClicked", { roomId, letter });
-          handleLetterClick(button);
-        }
-      });
-      alphabetCircle.appendChild(button);
-    });
-
-    // Zusätzliche Funktion für Buchstaben-Klick
-    function handleLetterClick(button) {
-      clickSound.play();
-      selectedLetter = button;
-      button.classList.add('clicked');
-      button.disabled = true;
-      openTextField();
-      wordInput.placeholder = `Wort mit ${button.textContent}...`;
-      lettersClicked++;
-      checkAllLettersClicked();
-    }
-
-    // Empfange Buchstaben-Update
-    socket.on("letterUpdate", (letter) => {
-      const button = document.querySelector(`button[data-letter='${letter}']`);
-      if (button && isGameActive) {
-          handleLetterClick(button);
-      }
-    });
-
-    // Check if all letters have been clicked -> game is over
-    function checkAllLettersClicked() {
-      if (lettersClicked === allowedLetters.length) {
-          blinkAfterEnd = true;
-          mainButton.disabled = true;
-      }
-    }
-
-    // Function to make letters blink -> if game is over
-    function blinkLetters() {
-      const originalColors = allowedLetters.map(letter => {
-          const button = [...alphabetCircle.children].find(btn => btn.textContent === letter);
-          return button.style.color; // Store original color
-      });
-
-      let currentIndex = 0;
-      const blinkInterval = setInterval(() => {
-        if (currentIndex < allowedLetters.length) {
-          const button = [...alphabetCircle.children].find(btn => btn.textContent === allowedLetters[currentIndex]);
-          button.style.color = 'gold'; // Change color to gold
-          currentIndex++;
-        } else {
-          // Restore original colors
-          allowedLetters.forEach((letter, index) => {
-            const button = [...alphabetCircle.children].find(btn => btn.textContent === letter);
-            button.style.color = originalColors[index]; // Restore original color
-          });
-        }
-      }, 50); // Adjust speed of blinking
-    }
-
-    // Handle Enter key for submitting input
-    wordInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-          event.preventDefault(); // Prevent form submission if inside a form
-          if (wordInput.value.trim() !== '') {
-              // Assuming you have a function to handle submission
-              resetRound(); // Call reset to start the next round
-              closeTextField(); // Close the text field
-          }
-          if (lettersClicked === allowedLetters.length) {
-            blinkLetters(); // Start blinking letters after round ends
-            blinkAfterEnd = false;
-            endRound(); //Spiel ist zu Ende
-          }
-      }
-    });
-
-    // Synchronisiere Texteingabe
-    wordInput.addEventListener('input', () => {
-      const text = wordInput.value;
-      socket.emit("textInput", { roomId, text });
-    });
-
-    // Empfange Texteingaben anderer Spieler
-    socket.on("textUpdate", (text) => {
-      wordInput.value = text; // Zeigt anderen Spielern die Eingabe live
-    });
-
-    // Position letter buttons in a circle
-    const letters = document.querySelectorAll('.letter');
-    const radius = 190; // Adjust as needed
-    letters.forEach((letter, index) => {
-      const angle = (index / letters.length) * (2 * Math.PI) - Math.PI / 2; // Start from the top (A)
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
-      letter.style.transform = `translate(${x}px, ${y}px)`;
-    });
-  
-    // START button click handler
-    mainButton.addEventListener('click', () => {
-      if (!isGameActive) {
-        startGame();
-        socket.emit("mainButtonPressed", roomId);
-      } else {
-        resetRound();
-        closeTextField();
-      }
-    });
-    // Empfange Hauptbutton-Update vom Server
-    socket.on("mainButtonUpdate", () => {
-      if (!isGameActive) {
-          startGame();
-      } else {
-          resetRound();
-          closeTextField();
-      }
-    });
-  
-    function startGame() {
-      isGameActive = true;
-      mainButton.textContent = timer;
-      document.querySelectorAll('.letter').forEach(button => {
-        button.style.pointerEvents = 'auto'; // Enable buttons
-      });
-      startCountdown();
-      countdownSound.play();
-    }
-  
-    function resetRound() {
-      if (selectedLetter && wordInput.value.trim() !== '') {
-        console.log(`Word submitted: ${wordInput.value}`);
-        wordInput.value = '';
-        selectedLetter = null;
-      }
-      clearInterval(interval);
-      timer = 25;
-      mainButton.textContent = timer;
-      startCountdown();
-    }
-  
-    function startCountdown() {
-      clearInterval(interval);
-      interval = setInterval(() => {
-        timer--;
-        mainButton.textContent = timer;
-        if (timer === 0) {
-          clearInterval(interval);
-          endRound();
-        }
-      }, 1000);
-    }
-  
-    function endRound() {
-      isGameActive = false;
-      mainButton.textContent = 'START';
-      countdownSound.pause();
-      countdownSound.currentTime = 0;
-      // Disable buttons after round ends
-      document.querySelectorAll('.letter').forEach(button => {
+        const button = document.createElement('button');
+        button.textContent = letter;
+        button.classList.add('letter', 'noto-sans-bold');
+        button.setAttribute('data-letter', letter);
         button.style.pointerEvents = 'none';
-      });
-      closeTextField(); // Close the text field when the round ends
-      if (blinkAfterEnd) {
-          blinkLetters(); // Start blinking letters after round ends
-          blinkAfterEnd = false; // Reset the flag
-      }
+
+        button.addEventListener('click', () => {
+            if (isGameActive) {
+                socket.emit("letterClicked", { roomId, letter });
+                handleLetterClick(button);
+            }
+        });
+        alphabetCircle.appendChild(button);
+    });
+
+    // Position der Buchstaben im Kreis
+    const letters = document.querySelectorAll('.letter');
+    const radius = 190;
+    letters.forEach((letter, index) => {
+        const angle = (index / letters.length) * (2 * Math.PI) - Math.PI / 2;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        letter.style.transform = `translate(${x}px, ${y}px)`;
+    });
+
+    // Buchstaben-Click Handler
+    function handleLetterClick(button) {
+        clickSound.play();
+        selectedLetter = button;
+        button.classList.add('clicked');
+        button.disabled = true;
+        openTextField();
+        wordInput.placeholder = `Wort mit ${button.textContent}...`;
+        lettersClicked++;
+        checkAllLettersClicked();
     }
-  
 
-    // Load categories from JSON
-    fetch('categories.json')
-        .then(response => response.json())
-        .then(data => {
-            categories = data.categories;
-            chooseRandomCategory();
-        })
-        .catch(error => console.error('Error loading categories:', error));
-
-    // Function to choose a random category and display it
-    function chooseRandomCategory() {
-        if (categories.length === usedCategories.length) {
-            usedCategories = []; // Reset if all categories are used
+    // Prüfen ob alle Buchstaben geklickt wurden
+    function checkAllLettersClicked() {
+        if (lettersClicked === allowedLetters.length) {
+            blinkAfterEnd = true;
+            mainButton.disabled = true;
         }
-
-        const availableCategories = categories.filter(cat => !usedCategories.includes(cat));
-        const randomCategory = availableCategories[Math.floor(Math.random() * availableCategories.length)];
-
-        usedCategories.push(randomCategory); // Mark as used
-        categoryLabel.textContent = `${randomCategory}`;
-        localStorage.setItem('usedCategories', JSON.stringify(usedCategories)); // Save to localStorage
     }
 
-    // Event listener for "Next Category"
-    document.querySelector('.cta').addEventListener('click', (e) => {
+    // Buchstaben blinken lassen
+    function blinkLetters() {
+        const originalColors = allowedLetters.map(letter => {
+            const button = [...alphabetCircle.children].find(btn => btn.textContent === letter);
+            return button.style.color;
+        });
+
+        let currentIndex = 0;
+        const blinkInterval = setInterval(() => {
+            if (currentIndex < allowedLetters.length) {
+                const button = [...alphabetCircle.children].find(btn => btn.textContent === allowedLetters[currentIndex]);
+                button.style.color = 'gold';
+                currentIndex++;
+            } else {
+                allowedLetters.forEach((letter, index) => {
+                    const button = [...alphabetCircle.children].find(btn => btn.textContent === letter);
+                    button.style.color = originalColors[index];
+                });
+            }
+        }, 50);
+    }
+
+    // Wort-Eingabe Handler
+    wordInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (wordInput.value.trim() !== '') {
+                socket.emit('submitWord', { 
+                    word: wordInput.value.trim(), 
+                    letter: selectedLetter.textContent,
+                    roomId: roomId
+                });
+                resetRound();
+                closeTextField();
+            }
+            if (lettersClicked === allowedLetters.length) {
+                blinkLetters();
+                blinkAfterEnd = false;
+                endRound();
+            }
+        }
+    });
+
+    // Main Button Handler
+    mainButton.addEventListener('click', () => {
+        console.log('Main button clicked, isGameActive:', isGameActive);
+        if (!isGameActive && roomId) {
+            console.log('Emitting startTimer event with roomId:', roomId);
+            socket.emit('startTimer', { roomId });
+        }
+    });
+
+    // Nächste Kategorie Button Handler
+    nextCategoryBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        chooseRandomCategory();
-        location.reload(); // Refresh the page
+        if (roomId) {
+            console.log('Requesting new category for room:', roomId);
+            socket.emit('newCategory', { roomId });
+        }
+    });
+
+    // Timer Funktionen
+    function startGame() {
+        isGameActive = true;
+        mainButton.textContent = timer;
+        document.querySelectorAll('.letter').forEach(button => {
+            button.style.pointerEvents = 'auto';
+        });
+        startCountdown();
+        countdownSound.play();
+    }
+
+    function resetRound() {
+        if (selectedLetter && wordInput.value.trim() !== '') {
+            wordInput.value = '';
+            selectedLetter = null;
+        }
+        clearInterval(interval);
+        timer = 25;
+        mainButton.textContent = timer;
+        startCountdown();
+    }
+
+    function startCountdown() {
+        clearInterval(interval);
+        interval = setInterval(() => {
+            timer--;
+            mainButton.textContent = timer;
+            if (timer === 0) {
+                clearInterval(interval);
+                endRound();
+            }
+        }, 1000);
+    }
+
+    function endRound() {
+        isGameActive = false;
+        mainButton.textContent = 'START';
+        countdownSound.pause();
+        countdownSound.currentTime = 0;
+        document.querySelectorAll('.letter').forEach(button => {
+            button.style.pointerEvents = 'none';
+        });
+        closeTextField();
+        if (blinkAfterEnd) {
+            blinkLetters();
+            blinkAfterEnd = false;
+        }
+    }
+
+    // Socket Events
+    socket.on('playerJoined', (data) => {
+        console.log('Player joined:', data);
+        if (data.category) {
+            categoryLabel.textContent = data.category;
+        }
+    });
+
+    socket.on('timerStarted', (data) => {
+        console.log('Timer started event received:', data);
+        startGame();
+    });
+
+    socket.on('categoryChanged', (data) => {
+        console.log('Category changed event received:', data);
+        categoryLabel.textContent = data.category;
+    });
+
+    socket.on('letterClicked', (data) => {
+        console.log('Letter clicked event received:', data);
+        if (data.letter) {
+            const button = document.querySelector(`[data-letter="${data.letter}"]`);
+            if (button) {
+                handleLetterClick(button);
+            }
+        }
     });
 });
-  

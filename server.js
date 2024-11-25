@@ -1,135 +1,166 @@
-const express = require("express");
-const path = require("path");
+const express = require('express');
 const app = express();
-
-// socket.io Setup
-const http = require("http");
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server, { pingInterval: 2000, pingTimeout: 5000 });
-
-// Statische Dateien bereitstellen
-app.use(express.static(path.resolve(__dirname)));
-
-// Root-Route für index.html
-app.get("/", (req, res)=>{
-    res.sendFile(path.join(__dirname, "index.html"));
-})
-
-// Server starten
-server.listen(3000, () => {
-    console.log("Server läuft auf http://localhost:3000");
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "*"
+    }
 });
 
-// Room-Management und Userverwaltung
+app.use(express.static(__dirname));
 
-// Map zur Speicherung der Räume und deren Spieler
 const rooms = new Map();
+const categories = [
+    "Tiere", "Länder", "Städte", "Namen", "Essen & Trinken", "Berufe"
+];
 
-// Funktion zur Generierung einer einzigartigen Room ID
-function generateUniqueRoomId() {
-    let roomId;
-    do {
-      roomId = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6-stellige zufällige ID
-    } while (rooms.has(roomId)); // Wiederholen, falls die ID schon existiert
-    return roomId;
-}
+io.on('connection', (socket) => {
+    console.log('Ein Benutzer hat sich verbunden');
 
-// Socket.IO-Logik für den Umgang mit Spielern und Räumen
-io.on("connection", (socket) => {
-    console.log("Ein Benutzer ist verbunden:", socket.id);
-
-    // Neues Spiel erstellen
-    socket.on("createRoom", (username) => {
-        const roomId = generateUniqueRoomId();
-        rooms.set(roomId, {
-            users: [{ id: socket.id, username }],
-            turnIndex: 0 // Der erste Spieler wird initial festgelegt
-        });
+    // Raum erstellen
+    socket.on('createRoom', (roomId) => {
+        if (!rooms.has(roomId)) {
+            rooms.set(roomId, {
+                players: new Set([socket.id]),
+                gameStarted: false,
+                currentCategory: categories[Math.floor(Math.random() * categories.length)],
+                usedLetters: new Set()
+            });
+        }
+        socket.roomId = roomId;
         socket.join(roomId);
-        socket.emit("roomCreated", roomId); // Room ID an den Ersteller senden
-        console.log(`Raum ${roomId} wurde erstellt von ${username}`);
+        console.log('Room created/joined:', roomId);
+        socket.emit('roomCreated');
     });
 
-    // Einem existierenden Raum beitreten
-    socket.on("joinRoom", ({ roomId, username }) => {
+    // Raum überprüfen
+    socket.on('checkRoom', (roomId) => {
+        console.log('Checking room:', roomId);
+        socket.emit('roomExists', rooms.has(roomId));
+    });
+
+    // Raum beitreten
+    socket.on('joinRoom', (data) => {
+        const { roomId, playerName } = data;
+        
         if (rooms.has(roomId)) {
             const room = rooms.get(roomId);
-            room.users.push({ id: socket.id, username });
+            room.players.add(socket.id);
+            socket.roomId = roomId;
+            socket.playerName = playerName;
             socket.join(roomId);
-            io.to(roomId).emit("userJoined", { username, roomId });
-            console.log(`${username} ist Raum ${roomId} beigetreten`);
-        } else {
-            socket.emit("error", "Ungültige Room ID");
-        }
-    });
-
-    /** 
-     * NUN GEHTS AN DIE GAME LOGIK
-    */
-
-    // Funktion für die Zugübergabe
-    socket.on("endTurn", (roomId) => {
-        const room = rooms.get(roomId);
-        if (room) {
-            // Update turnIndex für den nächsten Spieler
-            room.turnIndex = (room.turnIndex + 1) % room.users.length;
-            const currentPlayer = room.users[room.turnIndex];
             
-            // Benachrichtigen, dass der nächste Spieler an der Reihe ist
-            io.to(currentPlayer.id).emit("yourTurn", { username: currentPlayer.username });
-            // weiß ich nicht, ob nötig io.to(roomId).emit("turnChanged", { currentPlayer: currentPlayer.username });
+            socket.emit('playerJoined', {
+                category: room.currentCategory
+            });
+            
+            console.log('Player', playerName, 'joined room:', roomId);
+        } else {
+            // Wenn der Raum nicht existiert, erstelle ihn
+            console.log('Room not found, creating new room:', roomId);
+            rooms.set(roomId, {
+                players: new Set([socket.id]),
+                gameStarted: false,
+                currentCategory: categories[Math.floor(Math.random() * categories.length)],
+                usedLetters: new Set()
+            });
+            socket.roomId = roomId;
+            socket.playerName = playerName;
+            socket.join(roomId);
+            socket.emit('playerJoined', {
+                category: rooms.get(roomId).currentCategory
+            });
         }
     });
 
-    // Main Button Event
-    socket.on("mainButtonPressed", (roomId) => {
-        io.to(roomId).emit("mainButtonUpdate");
+    socket.on('startTimer', (data) => {
+        const { roomId } = data;
+        console.log('Timer start requested for room:', roomId);
+        if (roomId && rooms.has(roomId)) {
+            console.log('Starting timer for room:', roomId);
+            const room = rooms.get(roomId);
+            room.gameStarted = true;
+            io.to(roomId).emit('timerStarted', { 
+                duration: 25
+            });
+        } else {
+            console.log('Room not found:', roomId);
+        }
     });
 
-    // Buchstaben-Klick Event
-    socket.on("letterClicked", ({ roomId, letter }) => {
-        io.to(roomId).emit("letterUpdate", letter);
-    });
-
-    // Texteingabe Event
-    socket.on("textInput", ({ roomId, text }) => {
-        io.to(roomId).emit("textUpdate", text);
-    });
-
-    // Benutzer-Disconnect behandeln
-    // Spieler verlassen den Raum
-    socket.on("disconnect", (reason) => {
-        rooms.forEach((room, roomId) => {
-            const userIndex = room.users.findIndex(user => user.id === socket.id);
-            if (userIndex !== -1) {
-                const [removedUser] = room.users.splice(userIndex, 1);
-                console.log(`${removedUser.username} hat Raum ${roomId} verlassen`);
-                
-                // Aktualisiere den turnIndex, falls nötig
-                if (room.turnIndex >= room.users.length) {
-                    room.turnIndex = 0;
-                }
-
-                if (room.users.length === 0) {
-                    rooms.delete(roomId); // Raum entfernen, wenn keine Benutzer mehr übrig sind
-                    console.log('Der Raum ${roomId} ist leer und wurde gelöscht')
-                } else {
-                    io.to(roomId).emit("userLeft", removedUser.username);
-                }
-            }
-        });
-    });
-    /*
-    // Benutzer-Disconnect-Logik
-    socket.on("disconnect", () => {
-        console.log(`Benutzer ${socket.id} hat die Verbindung getrennt.`);
-        for (const [roomId, room] of rooms.entries()) {
-            if (room.users.some(user => user.id === socket.id)) {
-                socket.emit("leaveRoom", roomId);
+    socket.on('submitWord', (data) => {
+        if (socket.roomId && rooms.has(socket.roomId)) {
+            const room = rooms.get(socket.roomId);
+            const { word, letter } = data;
+            
+            if (word.toLowerCase().startsWith(letter.toLowerCase())) {
+                room.usedLetters.add(letter.toLowerCase());
+                io.to(socket.roomId).emit('wordAccepted', {
+                    playerId: socket.id,
+                    letter: letter,
+                    word: word
+                });
             }
         }
-        delete users[socket.id];
     });
-    */
+
+    socket.on('playerFailed', () => {
+        if (socket.roomId && rooms.has(socket.roomId)) {
+            const room = rooms.get(socket.roomId);
+            const player = room.players.has(socket.id);
+            if (player) {
+                room.players.delete(socket.id);
+                io.to(socket.roomId).emit('playerEliminated', {
+                    playerId: socket.id
+                });
+            }
+        }
+    });
+
+    socket.on('newCategory', (data) => {
+        const { roomId } = data;
+        console.log('New category requested for room:', roomId);
+        if (roomId && rooms.has(roomId)) {
+            console.log('Changing category for room:', roomId);
+            const room = rooms.get(roomId);
+            room.currentCategory = categories[Math.floor(Math.random() * categories.length)];
+            room.usedLetters.clear();
+            io.to(roomId).emit('categoryChanged', {
+                category: room.currentCategory
+            });
+        } else {
+            console.log('Room not found:', roomId);
+        }
+    });
+
+    socket.on('letterClicked', (data) => {
+        const { roomId, letter } = data;
+        console.log('Letter clicked in room:', roomId, 'letter:', letter);
+        if (roomId && rooms.has(roomId)) {
+            socket.to(roomId).emit('letterClicked', { letter });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected, keeping room data');
+        // Raum und Spielerdaten bleiben erhalten
+        if (socket.roomId && rooms.has(socket.roomId)) {
+            const room = rooms.get(socket.roomId);
+            room.players.delete(socket.id);
+            // Raum wird nur gelöscht, wenn er länger als 1 Stunde leer ist
+            if (room.players.size === 0) {
+                setTimeout(() => {
+                    if (rooms.has(socket.roomId) && rooms.get(socket.roomId).players.size === 0) {
+                        rooms.delete(socket.roomId);
+                        console.log('Room deleted after timeout:', socket.roomId);
+                    }
+                }, 600000); // 1 Stunde
+            }
+        }
+    });
+});
+
+const PORT = process.env.PORT || 4000;
+http.listen(PORT, () => {
+    console.log(`Server läuft auf Port ${PORT}`);
 });
