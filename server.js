@@ -11,7 +11,8 @@ app.use(express.static(__dirname));
 
 const rooms = new Map();
 const categories = [
-    "Tiere", "Länder", "Städte", "Namen", "Essen & Trinken", "Berufe"
+    "Tiere", "Städte", "Länder", "Essen & Trinken", "Berufe", 
+    "Sportarten", "Filme & Serien", "Marken", "Musik"
 ];
 
 io.on('connection', (socket) => {
@@ -21,15 +22,17 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (roomId) => {
         if (!rooms.has(roomId)) {
             rooms.set(roomId, {
-                players: new Set([socket.id]),
+                players: [], // Array für Reihenfolge
+                activePlayers: new Set(), // Set für aktive Spieler
                 gameStarted: false,
                 currentCategory: categories[Math.floor(Math.random() * categories.length)],
-                usedLetters: new Set()
+                usedLetters: new Set(),
+                currentPlayerIndex: 0
             });
         }
         socket.roomId = roomId;
         socket.join(roomId);
-        console.log('Room created/joined:', roomId);
+        console.log('Room created', roomId);
         socket.emit('roomCreated');
     });
 
@@ -45,116 +48,138 @@ io.on('connection', (socket) => {
         
         if (rooms.has(roomId)) {
             const room = rooms.get(roomId);
-            room.players.add(socket.id);
+            // Füge Spieler nur hinzu, wenn er noch nicht im Raum ist
+            if (!room.players.find(p => p.id === socket.id)) {
+                const player = {
+                    id: socket.id,
+                    name: playerName,
+                    isActive: true
+                };
+                room.players.push(player);
+                room.activePlayers.add(socket.id);
+            }
             socket.roomId = roomId;
             socket.playerName = playerName;
             socket.join(roomId);
             
-            socket.emit('playerJoined', {
-                category: room.currentCategory
+            // Sende aktuelle Spielerliste und aktiven Spieler an alle
+            io.to(roomId).emit('playerJoined', {
+                players: room.players,
+                category: room.currentCategory,
+                currentPlayer: room.players[room.currentPlayerIndex]
             });
             
             console.log('Player', playerName, 'joined room:', roomId);
-        } else {
-            // Wenn der Raum nicht existiert, erstelle ihn
-            console.log('Room not found, creating new room:', roomId);
-            rooms.set(roomId, {
-                players: new Set([socket.id]),
-                gameStarted: false,
-                currentCategory: categories[Math.floor(Math.random() * categories.length)],
-                usedLetters: new Set()
-            });
-            socket.roomId = roomId;
-            socket.playerName = playerName;
-            socket.join(roomId);
-            socket.emit('playerJoined', {
-                category: rooms.get(roomId).currentCategory
-            });
         }
     });
 
     socket.on('startTimer', (data) => {
         const { roomId } = data;
-        console.log('Timer start requested for room:', roomId);
         if (roomId && rooms.has(roomId)) {
-            console.log('Starting timer for room:', roomId);
             const room = rooms.get(roomId);
             room.gameStarted = true;
             io.to(roomId).emit('timerStarted', { 
-                duration: 25
+                duration: 25,
+                currentPlayer: room.players[room.currentPlayerIndex]
             });
-        } else {
-            console.log('Room not found:', roomId);
         }
     });
 
-    socket.on('submitWord', (data) => {
-        if (socket.roomId && rooms.has(socket.roomId)) {
-            const room = rooms.get(socket.roomId);
-            const { word, letter } = data;
-            
-            if (word.toLowerCase().startsWith(letter.toLowerCase())) {
-                room.usedLetters.add(letter.toLowerCase());
-                io.to(socket.roomId).emit('wordAccepted', {
-                    playerId: socket.id,
-                    letter: letter,
-                    word: word
-                });
-            }
+    socket.on('nextPlayer', (data) => {
+        const { roomId } = data;
+        if (roomId && rooms.has(roomId)) {
+            const room = rooms.get(roomId);
+            do {
+                room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+            } while (!room.activePlayers.has(room.players[room.currentPlayerIndex].id));
+
+            io.to(roomId).emit('playerTurnChanged', {
+                currentPlayer: room.players[room.currentPlayerIndex],
+                players: room.players
+            });
+
+            // Starte Timer für nächsten Spieler
+            io.to(roomId).emit('timerStarted', { 
+                duration: 25,
+                currentPlayer: room.players[room.currentPlayerIndex]
+            });
         }
     });
 
     socket.on('playerFailed', () => {
         if (socket.roomId && rooms.has(socket.roomId)) {
             const room = rooms.get(socket.roomId);
-            const player = room.players.has(socket.id);
+            room.activePlayers.delete(socket.id);
+            
+            // Markiere Spieler als inaktiv
+            const player = room.players.find(p => p.id === socket.id);
             if (player) {
-                room.players.delete(socket.id);
+                player.isActive = false;
                 io.to(socket.roomId).emit('playerEliminated', {
                     playerId: socket.id
                 });
+
+                // Wechsle zum nächsten aktiven Spieler
+                socket.emit('nextPlayer', { roomId: socket.roomId });
             }
         }
     });
 
     socket.on('newCategory', (data) => {
         const { roomId } = data;
-        console.log('New category requested for room:', roomId);
         if (roomId && rooms.has(roomId)) {
-            console.log('Changing category for room:', roomId);
             const room = rooms.get(roomId);
             room.currentCategory = categories[Math.floor(Math.random() * categories.length)];
             room.usedLetters.clear();
-            io.to(roomId).emit('categoryChanged', {
-                category: room.currentCategory
+            room.currentPlayerIndex = 0;
+            room.gameStarted = false;  // Setze gameStarted zurück
+            
+            // Reaktiviere alle Spieler
+            room.players.forEach(player => {
+                player.isActive = true;
+                room.activePlayers.add(player.id);
             });
-        } else {
-            console.log('Room not found:', roomId);
+
+            io.to(roomId).emit('categoryChanged', {
+                category: room.currentCategory,
+                players: room.players,
+                currentPlayer: room.players[room.currentPlayerIndex]
+            });
         }
     });
 
     socket.on('letterClicked', (data) => {
         const { roomId, letter } = data;
-        console.log('Letter clicked in room:', roomId, 'letter:', letter);
         if (roomId && rooms.has(roomId)) {
-            socket.to(roomId).emit('letterClicked', { letter });
+            const room = rooms.get(roomId);
+            // Nur der aktuelle Spieler darf Buchstaben klicken
+            if (room.players[room.currentPlayerIndex].id === socket.id) {
+                io.to(roomId).emit('letterClicked', { letter });
+            }
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected, keeping room data');
-        // Raum und Spielerdaten bleiben erhalten
+        console.log('User disconnected');
         if (socket.roomId && rooms.has(socket.roomId)) {
             const room = rooms.get(socket.roomId);
-            room.players.delete(socket.id);
-            // Raum wird nur gelöscht, wenn er länger als 1 Stunde leer ist
-            if (room.players.size === 0) {
+            room.activePlayers.delete(socket.id);
+            
+            // Entferne Spieler aus der Liste
+            room.players = room.players.filter(p => p.id !== socket.id);
+            
+            if (room.players.length === 0) {
                 setTimeout(() => {
-                    if (rooms.has(socket.roomId) && rooms.get(socket.roomId).players.size === 0) {
+                    if (rooms.has(socket.roomId) && rooms.get(socket.roomId).players.length === 0) {
                         rooms.delete(socket.roomId);
                         console.log('Room deleted after timeout:', socket.roomId);
                     }
-                }, 600000); // 1 Stunde
+                }, 600000);
+            } else {
+                // Wenn der disconnectete Spieler der aktuelle Spieler war
+                if (room.players[room.currentPlayerIndex]?.id === socket.id) {
+                    socket.emit('nextPlayer', { roomId: socket.roomId });
+                }
             }
         }
     });

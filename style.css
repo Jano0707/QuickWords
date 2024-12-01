@@ -281,7 +281,7 @@ input[type="radio"]:checked + .select-btn {
     flex-direction: column;
     justify-content: center; /* Zentriert den Inhalt vertikal */
     align-items: center; /* Zentriert den Inhalt horizontal */
-    gap: 4rem;
+    gap: 1rem;
     max-width: 42rem; /* Maximalbreite für Container */
     width: 100%;
     padding: 1.5rem;
@@ -325,6 +325,16 @@ input[type="radio"]:checked + .select-btn {
     font-size: large;
 }
 
+.copy-icon:hover {
+    color: #4235f8;
+    transform: scale(1.2); /* Leichte Vergrößerung beim Hover */
+}
+
+.copy-icon.clicked {
+    background-color: #6d6565;
+    color: #ddd;
+}
+
 .category-display {
     display: flex; /* Flexbox für die Anordnung */
     justify-content: center; /* Horizontale Zentrierung */
@@ -350,7 +360,13 @@ input[type="radio"]:checked + .select-btn {
 
 .users-turn {
     font-size: 1.7rem;
-    color: #9ca3af;
+    color: #FBC638;
+    font-style: normal !important;
+}
+
+#currentPlayer {
+    font-style: normal !important;
+    font-family: "Noto Sans", sans-serif !important;
 }
 
 .circle-container {
@@ -416,6 +432,7 @@ input[type="radio"]:checked + .select-btn {
 }
 
 .letter {
+    /*
     position: absolute;
     background-color: white;
     border-radius: 50%;
@@ -427,6 +444,24 @@ input[type="radio"]:checked + .select-btn {
     line-height: 40px;
     border: none;
     cursor: pointer;
+    */
+    position: absolute;
+    background: linear-gradient(145deg, #d2e5f7, #7b30dd);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    color: #020833;
+    cursor: pointer;
+    font-family: "Noto Sans", sans-serif;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(104, 34, 216, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center;
 }
 
 .letter.active {
@@ -435,14 +470,25 @@ input[type="radio"]:checked + .select-btn {
 }
 
 .letter:hover {
+    /*
     background-color: #8A2BE2; /* Lila Farbton beim Hover */
-    transform: scale(2.2); /* Button wächst beim Hover */
+    /* transform: scale(2.2); /* Button wächst beim Hover */
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(251, 198, 56, 0.4);
+    background: linear-gradient(145deg, #57d9fa, #48c5eb);
 }
 
 .letter.clicked {
-    background-color: #6d6565;
+    background: #3a3838;
     color: #ddd;
     cursor: not-allowed;
+}
+
+.letter.selected {
+    background: linear-gradient(145deg, #e42121, #8b0101);
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(2, 195, 154, 0.4);
 }
 
 .wordInputContainer {
@@ -496,7 +542,7 @@ display: flex;
 justify-content: center;
 position: absolute;
 right: 100px; /* Direkt am rechten Rand */
-top: 53%; /* Mittig vertikal */
+top: 57%; /* Mittig vertikal */
 transform: translateY(-50%); /* Exakte Zentrierung */
 }
 

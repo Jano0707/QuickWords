@@ -46,9 +46,17 @@ newGameButton.addEventListener("click", () => {
         const roomId = generateRoomId();
         console.log('Creating new room:', roomId);
         socket.emit("createRoom", roomId);
+
+        socket.on('roomCreated', () => {
+            localStorage.setItem('quickWordsRoomId', roomId);
+            localStorage.setItem('quickWordsPlayerName', username);
+            window.location.href = 'game.html';
+        });
+        /*
         socket.on('roomCreated', () => {
             window.location.href = `game.html?roomId=${roomId}&name=${encodeURIComponent(username)}`;
         });
+        */
     }
 });
 
@@ -62,10 +70,21 @@ document.querySelector('.join-btn').addEventListener('click', () => {
         
         socket.on('roomExists', (exists) => {
             if (exists) {
+                localStorage.setItem('quickWordsRoomId', roomId);
+                localStorage.setItem('quickWordsPlayerName', username);
+                window.location.href = 'game.html';
+            } else {
+                alert('Dieser Raum existiert nicht!');
+            }
+        });
+        /*
+        socket.on('roomExists', (exists) => {
+            if (exists) {
                 window.location.href = `game.html?roomId=${roomId}&name=${encodeURIComponent(username)}`;
             } else {
                 alert('Dieser Raum existiert nicht!');
             }
         });
+        */
     }
 });
